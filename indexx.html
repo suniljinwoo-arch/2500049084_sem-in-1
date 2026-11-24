@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Management System</title>
+</head>
+<body>
+
+    <h1>Movie Management System</h1>
+
+    <h2>Add Movie</h2>
+
+    <input type="text" id="title" placeholder="Movie Title"><br><br>
+    <input type="text" id="genre" placeholder="Genre"><br><br>
+    <input type="number" id="year" placeholder="Release Year"><br><br>
+    <input type="number" id="rating" placeholder="Rating"><br><br>
+    <input type="text" id="director" placeholder="Director"><br><br>
+
+    <button onclick="addMovie()">Add Movie</button>
+
+    <h2>Search Movie</h2>
+
+    <input type="text" id="search" placeholder="Search by title or genre">
+    <button onclick="searchMovie()">Search</button>
+    <button onclick="loadMovies()">Show All</button>
+
+    <h2>Movie List</h2>
+
+    <table border="1" cellpadding="10">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Genre</th>
+                <th>Year</th>
+                <th>Rating</th>
+                <th>Director</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="movieList"></tbody>
+    </table>
+
+    <script>
+
+        // Add Movie
+        async function addMovie() {
+
+            const movie = {
+                title: document.getElementById("title").value,
+                genre: document.getElementById("genre").value,
+                year: document.getElementById("year").value,
+                rating: document.getElementById("rating").value,
+                director: document.getElementById("director").value
+            };
+
+            await fetch("/movies", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(movie)
+            });
+
+            alert("Movie Added Successfully");
+            loadMovies();
+        }
+
+        // View Movies
+        async function loadMovies() {
+
+            const res = await fetch("/movies");
+            const movies = await res.json();
+
+            displayMovies(movies);
+        }
+
+        // Display Movies
+        function displayMovies(movies) {
+
+            let rows = "";
+
+            movies.forEach(movie => {
+                rows += `
+                <tr>
+                    <td>${movie.title}</td>
+                    <td>${movie.genre}</td>
+                    <td>${movie.year}</td>
+                    <td>${movie.rating}</td>
+                    <td>${movie.director}</td>
+                    <td>
+                        <button onclick="editMovie('${movie._id}')">Edit</button>
+                        <button onclick="deleteMovie('${movie._id}')">Delete</button>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById("movieList").innerHTML = rows;
+        }
+
+        // Search Movie
+        async function searchMovie() {
+
+            const value = document.getElementById("search").value;
+
+            const res = await fetch(
+                "/search?title=" + encodeURIComponent(value) +
+                "&genre=" + encodeURIComponent(value)
+            );
+
+            const movies = await res.json();
+            displayMovies(movies);
+        }
+
+        // Update Movie
+        async function editMovie(id) {
+
+            const title = prompt("Enter new movie title:");
+            if (!title) return;
+
+            await fetch("/movies/" + id, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({title: title})
+            });
+
+            alert("Movie Updated Successfully");
+            loadMovies();
+        }
+
+        // Delete Movie
+        async function deleteMovie(id) {
+
+            if (confirm("Are you sure you want to delete?")) {
+
+                await fetch("/movies/" + id, {
+                    method: "DELETE"
+                });
+
+                alert("Movie Deleted Successfully");
+                loadMovies();
+            }
+        }
+
+        loadMovies();
+
+    </script>
+
+</body>
+</html>
